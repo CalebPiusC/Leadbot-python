@@ -3,11 +3,14 @@ from click import prompt
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+import csv
+import os
+from datetime import datetime
 
 load_dotenv()
 client = genai.Client()
 MODEL = "gemini-3-flash-preview"
-
+CSV_FILE = "leads.csv"
 
 
 def get_new_leads():
@@ -27,6 +30,23 @@ def qualify_lead_by_budget(lead):
         return {"score": "cold"}
 
 def save_to_sheet(lead, result):
+    file_exists = os.path.exists(CSV_FILE)
+
+    with open(CSV_FILE, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+
+        if not file_exists:
+            writer.writerow(["time", "name", "need", "budget", "score", "reason"])
+
+        writer.writerow([
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            lead["name"],
+            lead["need"],
+            lead["budget"],
+            result["score"],
+            result.get("reason", ""),
+        ])
+
     print("SAVED:", lead["name"], "->", result["score"])
 
 def send_slack(lead):
